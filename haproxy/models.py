@@ -72,12 +72,10 @@ class Section:
         if keyword in self.config:
             _declaration = self.config[keyword]
             if _declaration in self._lines:
-                print('dup')
                 _declaration = Declaration(keyword=keyword)
             _declaration.set_arguments(*args)
             self._lines.append(_declaration)
         else:
-            print()
             raise BadDeclaration(keyword)
 
     @classmethod
@@ -93,7 +91,9 @@ class GlobalSection(Section):
     section = 'global'
     defaults = [
         ('daemon', ''),
-        ('maxconn', '4092')
+        ('maxconn', '4092'),
+        ('log', '127.0.0.1', 'local0'),
+        ('log', '127.0.0.1', 'local1', 'notice')
     ]
 
 

@@ -70,9 +70,12 @@ class Section:
         :return: None
         """
         if keyword in self.config:
-            _delcaration = self.config[keyword]
-            _delcaration.set_arguments(*args)
-            self._lines.append(_delcaration)
+            _declaration = self.config[keyword]
+            if _declaration in self._lines:
+                print('dup')
+                _declaration = Declaration(keyword=keyword)
+            _declaration.set_arguments(*args)
+            self._lines.append(_declaration)
         else:
             print()
             raise BadDeclaration(keyword)
@@ -108,12 +111,8 @@ class DefaultsSection(Section):
 
 class ListenSection(Section):
     defaults = [
-        ('bind', '*:9000'),
-        ('mode',  'http', ),
-        ('stats enable', ),
-        ('stats auth', 'admin:admin'),
-        ('stats realm', 'HAproxy\ Statistics'),
-        ('stats uri', '/')
+        ('option httplog', ''),
+        ('mode',  'http', )
     ]
     section = 'listen'
 

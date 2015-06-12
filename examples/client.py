@@ -4,18 +4,15 @@ Example of using haproxy-python and Marathon to generate a configuration for ser
 
 __author__ = 'kevinschoon@gmail.com'
 
-import asyncio
-import aiohttp
+import requests
 
 from haproxy.client import Templater
 from haproxy.models import ListenSection, FrontendSection, BackendSection
 
-@asyncio.coroutine
 def _get_tasks(server):
     config = dict()
-    tasks = yield from aiohttp.request(url=server + '/v2/tasks', method='get')
-    t = yield from tasks.text()
-    for line in t.split('\n'):
+    tasks = requests.get(url=server + '/v2/tasks')
+    for line in tasks.text.split('\n'):
         try:
             _t = line.split('\t')
             app = _t[0]
@@ -34,9 +31,8 @@ def _get_tasks(server):
 
     return config
 
-@asyncio.coroutine
 def run(server):
-    config = yield from _get_tasks(server)
+    config = _get_tasks(server)
     sections = list()
     for app in config:
         section = ListenSection.from_defaults(name=app)
@@ -48,9 +44,9 @@ def run(server):
     t = Templater(use_stats=True, listen_sections=sections)
     cfg = t.render()
     cfg.test()
+    print(cfg)
 
 
 if __name__ == '__main__':
     marathon_server = 'http://ubuntu:8080'
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.async(run(marathon_server)))
+    run(marathon_server)

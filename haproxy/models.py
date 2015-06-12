@@ -37,6 +37,9 @@ class Declaration:
         else:
             return _str
 
+class ACL(Declaration):
+    def __init__(self, acl_name, ):
+        super().__init__(keyword='acl')
 
 class Section:
     """
@@ -122,3 +125,14 @@ class FrontendSection(Section):
 
 class BackendSection(Section):
     section = 'backend'
+
+class StatsSection(Section):
+    defaults = [
+        ('bind', '*:9000'),
+        ('mode',  'http', ),
+        ('stats enable', ),
+        ('stats auth', 'admin:admin'),
+        ('stats realm', 'HAproxy\ Statistics'),
+        ('stats uri', '/')
+    ]
+    section = 'listen'

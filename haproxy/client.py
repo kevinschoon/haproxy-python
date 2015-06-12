@@ -6,20 +6,8 @@ import os
 
 import jinja2
 
-from haproxy.models import Section, GlobalSection, DefaultsSection, BackendSection
+from haproxy.models import Section, GlobalSection, DefaultsSection, StatsSection
 from haproxy.exceptions import BadConfiguration
-
-class StatsSection(Section):
-    defaults = [
-        ('bind', '*:9000'),
-        ('mode',  'http', ),
-        ('stats enable', ),
-        ('stats auth', 'admin:admin'),
-        ('stats realm', 'HAproxy\ Statistics'),
-        ('stats uri', '/')
-    ]
-    section = 'listen'
-
 
 class HAProxyConfig:
     """

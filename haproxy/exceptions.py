@@ -8,3 +8,6 @@ class BadDeclaration(HAProxyException):
 
 class BadConfiguration(HAProxyException):
     pass
+
+class HaProxyProcessException(HAProxyException):
+    pass

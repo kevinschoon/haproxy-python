@@ -3,11 +3,12 @@ __author__ = 'kevinschoon@gmail.com'
 import subprocess
 import uuid
 import os
+import time
 
 import jinja2
 
-from haproxy.models import Section, GlobalSection, DefaultsSection, StatsSection
-from haproxy.exceptions import BadConfiguration
+from haproxy.models import GlobalSection, DefaultsSection, StatsSection
+from haproxy.exceptions import BadConfiguration, HaProxyProcessException
 
 class HAProxyConfig:
     """
@@ -79,3 +80,81 @@ class Templater:
 
     def render(self):
         return HAProxyConfig(self.template.render(**self.context))
+
+
+class HAProxyProcess:
+    """
+    Manage an HAProxy Process.
+    """
+
+    def __init__(self, daemon=False, work_dir='/tmp/haproxy-python'):
+        self.daemon = daemon
+        self.running = False
+        self.pid_path = None
+        self.pid = None
+        self.work_dir = work_dir
+        if daemon:
+            os.makedirs(self.work_dir, exist_ok=True)
+            self.pid_path = self.work_dir + '/haproxy.pid'
+
+    def _check_pid(self):
+        try:
+            with open(self.pid_path, 'r') as fp:
+                pid = fp.read().strip('\n')
+                if pid:
+                    try:
+                        os.kill(int(pid), 0)
+                    except OSError:
+                        self.running = False
+                    else:
+                        self.running = True
+                        self.pid = int(pid)
+        except FileNotFoundError:
+            self.running = False
+
+    def _start_daemon(self):
+        proc = subprocess.Popen(
+            ['haproxy', '-f', self.work_dir + '/haproxy.cfg'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        proc.communicate()
+        self._check_pid()
+
+    def _reload_daemon(self):
+        proc = subprocess.Popen(
+            ['haproxy', '-f', self.work_dir + '/haproxy.cfg', '-p', str(self.pid_path), '-st', str(self.pid)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        proc.communicate()
+        self._check_pid()
+
+    def _stop_daemon(self):
+        os.kill(self.pid, 15)
+        time.sleep(1)
+
+    def _start_foreground(self):
+        pass
+
+    def _write_config(self, config):
+        with open(self.work_dir + '/haproxy.cfg', 'w') as fp:
+            fp.write(str(config))
+
+    def start(self, config=None):
+        if self.daemon:
+            self._check_pid()
+            if self.running:
+                raise HaProxyProcessException('HAProxy is already running with pid {}'.format(self.pid))
+            self._write_config(config)
+            self._start_daemon()
+
+    def reload(self, config=None):
+        if self.daemon:
+            self._check_pid()
+            if not self.running:
+                raise HaProxyProcessException('HAProxy does not seem to be running, thus you cannot reload it.')
+            self._write_config(config)
+            self._reload_daemon()
+
+    def stop(self):
+        if self.daemon:
+            self._check_pid()
+            self._stop_daemon()

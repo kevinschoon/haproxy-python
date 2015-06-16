@@ -121,6 +121,10 @@ class ListenSection(Section):
 
 
 class FrontendSection(Section):
+    defaults = [
+        ('option httplog', ''),
+        ('mode', 'http')
+    ]
     section = 'frontend'
 
 class BackendSection(Section):
